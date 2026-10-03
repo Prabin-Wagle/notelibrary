@@ -7,7 +7,7 @@ pnpm-debug.log*
 lerna-debug.log*
 
 node_modules
-dist
+# The production build is committed for cPanel deployments (no Node runtime required).
 dist-ssr
 *.local
 

@@ -54,6 +54,8 @@ final class AdminApplicationFactory
             Dotenv::createImmutable($basePath)->safeLoad();
         }
 
+        self::loadLocalConfig($basePath);
+
         $config = Config::load($basePath);
         date_default_timezone_set((string) $config['app']['timezone']);
 
@@ -176,5 +178,39 @@ final class AdminApplicationFactory
         $app->add(new SecurityHeadersMiddleware());
 
         return $app;
+    }
+
+    /** Load the private cPanel config without overriding process or .env settings. */
+    private static function loadLocalConfig(string $basePath): void
+    {
+        $path = $basePath . '/config.local.php';
+        if (!is_file($path)) {
+            return;
+        }
+
+        $local = require $path;
+        if (!is_array($local)) {
+            throw new \RuntimeException('config.local.php must return an array.');
+        }
+
+        $aliases = [
+            'DB_NAME' => 'DB_DATABASE',
+            'DB_USER' => 'DB_USERNAME',
+        ];
+        foreach ($local as $key => $value) {
+            if (!is_string($key) || (!is_string($value) && !is_numeric($value) && !is_bool($value))) {
+                continue;
+            }
+            $environmentKey = $aliases[$key] ?? $key;
+            $existing = $_ENV[$environmentKey] ?? $_SERVER[$environmentKey] ?? getenv($environmentKey);
+            if ($existing !== false && $existing !== null && $existing !== '') {
+                continue;
+            }
+
+            $stringValue = is_bool($value) ? ($value ? 'true' : 'false') : (string) $value;
+            $_ENV[$environmentKey] = $stringValue;
+            $_SERVER[$environmentKey] = $stringValue;
+            putenv($environmentKey . '=' . $stringValue);
+        }
     }
 }
