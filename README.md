@@ -1,8 +1,16 @@
-# Note Library
+# Note Library — Student Portal
 
-This repository keeps the student and administrator portals on separate deployment branches:
+This branch contains the student React/Vite application at the repository root and the student PHP API in `backend/`.
 
-- `student` — student React app and student PHP API (`backend/`)
-- `admin` — admin React app and admin PHP API (`backend/`)
+## Build locally
 
-The `main` branch is the repository landing page. Deploy each portal from its own branch in cPanel Git Version Control. Before deploying, add a top-level `.cpanel.yml` configured with the exact cPanel document root and backend location for that branch. Do not commit `.env` or production database credentials.
+- Install Node.js 20+ and PHP 8.2+ with Composer.
+- Run `npm ci`, then `npm run build`.
+- Configure the frontend API origin as `VITE_API_BASE_URL` for the target environment.
+- Install the API with `composer install --no-dev` in `backend/`.
+
+See `backend/README.md` and `backend/.env.example` for API setup. Put real API/database secrets in a server-side `.env`; never commit it.
+
+## cPanel deployment
+
+The source is ready to clone from the `student` branch in cPanel Git Version Control. The repository does not include a deployment hook yet because the student website/API document roots and production API URL have not been provided. Configure those paths first, then add a top-level `.cpanel.yml` for this branch.

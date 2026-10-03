@@ -1,0 +1,162 @@
+/* TinyMCE Content Styles */
+.tinymce-content {
+  line-height: 1.6;
+  color: #374151;
+}
+
+.tinymce-content p {
+  margin-bottom: 1em;
+}
+
+.tinymce-content h1 {
+  font-size: 2.25em;
+  font-weight: bold;
+  margin-top: 0.67em;
+  margin-bottom: 0.67em;
+  color: #111827;
+}
+
+.tinymce-content h2 {
+  font-size: 1.875em;
+  font-weight: bold;
+  margin-top: 0.83em;
+  margin-bottom: 0.83em;
+  color: #111827;
+}
+
+.tinymce-content h3 {
+  font-size: 1.5em;
+  font-weight: bold;
+  margin-top: 1em;
+  margin-bottom: 1em;
+  color: #111827;
+}
+
+.tinymce-content h4 {
+  font-size: 1.25em;
+  font-weight: bold;
+  margin-top: 1.33em;
+  margin-bottom: 1.33em;
+  color: #111827;
+}
+
+.tinymce-content h5 {
+  font-size: 1em;
+  font-weight: bold;
+  margin-top: 1.67em;
+  margin-bottom: 1.67em;
+  color: #111827;
+}
+
+.tinymce-content h6 {
+  font-size: 0.875em;
+  font-weight: bold;
+  margin-top: 2.33em;
+  margin-bottom: 2.33em;
+  color: #111827;
+}
+
+.tinymce-content ul,
+.tinymce-content ol {
+  margin-left: 1.5em;
+  margin-bottom: 1em;
+}
+
+.tinymce-content ul {
+  list-style-type: disc;
+}
+
+.tinymce-content ol {
+  list-style-type: decimal;
+}
+
+.tinymce-content li {
+  margin-bottom: 0.5em;
+}
+
+.tinymce-content table {
+  border-collapse: collapse;
+  width: 100%;
+  margin-bottom: 1em;
+  border: 1px solid #d1d5db;
+}
+
+.tinymce-content table td,
+.tinymce-content table th {
+  border: 1px solid #d1d5db;
+  padding: 0.75rem;
+  text-align: left;
+}
+
+.tinymce-content table th {
+  background-color: #f3f4f6;
+  font-weight: 600;
+  color: #111827;
+}
+
+.tinymce-content table tr:nth-child(even) {
+  background-color: #f9fafb;
+}
+
+.tinymce-content a {
+  color: #2563eb;
+  text-decoration: none;
+}
+
+.tinymce-content a:hover {
+  text-decoration: underline;
+}
+
+.tinymce-content strong,
+.tinymce-content b {
+  font-weight: bold;
+}
+
+.tinymce-content em,
+.tinymce-content i {
+  font-style: italic;
+}
+
+.tinymce-content blockquote {
+  border-left: 4px solid #d1d5db;
+  padding-left: 1em;
+  margin-left: 0;
+  margin-right: 0;
+  margin-bottom: 1em;
+  color: #6b7280;
+  font-style: italic;
+}
+
+.tinymce-content code {
+  background-color: #f3f4f6;
+  padding: 0.2em 0.4em;
+  border-radius: 3px;
+  font-family: 'Courier New', monospace;
+  font-size: 0.9em;
+}
+
+.tinymce-content pre {
+  background-color: #f3f4f6;
+  padding: 1em;
+  border-radius: 0.5rem;
+  overflow-x: auto;
+  margin-bottom: 1em;
+}
+
+.tinymce-content pre code {
+  background-color: transparent;
+  padding: 0;
+}
+
+.tinymce-content img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.5rem;
+  margin: 1em 0;
+}
+
+.tinymce-content hr {
+  border: none;
+  border-top: 1px solid #d1d5db;
+  margin: 2em 0;
+}
