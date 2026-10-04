@@ -13,7 +13,7 @@ return [
     'FRONTEND_ORIGINS' => 'https://admin.notelibraryapp.com',
     'DB_HOST' => 'localhost',
     'DB_PORT' => '3306',
-    'DB_NAME' => 'notelibr_YOUR_DATABASE',
+    'DB_NAME' => 'notelibr_note_library_v2',
     'DB_USER' => 'notelibr_YOUR_DB_USER',
     'DB_PASSWORD' => 'REPLACE_WITH_DATABASE_PASSWORD',
     'DB_CHARSET' => 'utf8mb4',

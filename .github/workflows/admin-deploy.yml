@@ -1,0 +1,153 @@
+name: Build and deploy admin portal
+
+on:
+  push:
+    branches:
+      - admin
+  pull_request:
+    branches:
+      - admin
+  workflow_dispatch:
+    inputs:
+      accept_unverified_host_key:
+        description: "One-time only: accept and pin the first SSH host key for this run (unverified; MITM risk)."
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Validate and build admin release
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out the selected commit
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: pdo_mysql
+          coverage: none
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Report frontend lint baseline
+        continue-on-error: true
+        run: npm run lint
+
+      - name: Type-check frontend
+        run: npm run typecheck
+
+      - name: Install production API dependencies
+        run: composer install --working-dir=backend --no-dev --prefer-dist --no-interaction --optimize-autoloader
+
+      - name: Check PHP syntax
+        shell: bash
+        run: find backend -path backend/vendor -prune -o -path backend/tests -prune -o -type f -name '*.php' -print0 | xargs -0 -n1 php -l
+
+      - name: Build frontend
+        run: npm run build
+
+      - name: Package admin-only release
+        run: tar -czf admin-release.tar.gz --exclude=backend/.env --exclude=backend/config.local.php --exclude=backend/storage --exclude=backend/tests dist backend deploy-cpanel.sh
+
+      - name: Save built release
+        uses: actions/upload-artifact@v4
+        with:
+          name: admin-release-${{ github.sha }}
+          path: admin-release.tar.gz
+          if-no-files-found: error
+          retention-days: 3
+
+  deploy:
+    name: Deploy to admin.notelibraryapp.com
+    needs: build
+    if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/admin')
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment:
+      name: admin-production
+      url: https://admin.notelibraryapp.com
+    steps:
+      - name: Download built release
+        uses: actions/download-artifact@v4
+        with:
+          name: admin-release-${{ github.sha }}
+
+      - name: Configure cPanel SSH access
+        shell: bash
+        env:
+          CPANEL_HOST: ${{ vars.ADMIN_CPANEL_HOST }}
+          CPANEL_PORT: ${{ vars.ADMIN_CPANEL_PORT }}
+          CPANEL_USER: ${{ vars.ADMIN_CPANEL_USER }}
+          CPANEL_KNOWN_HOSTS: ${{ vars.ADMIN_CPANEL_KNOWN_HOSTS }}
+          CPANEL_SSH_KEY: ${{ secrets.ADMIN_CPANEL_SSH_KEY }}
+          ACCEPT_UNVERIFIED_HOST_KEY: ${{ github.event_name == 'workflow_dispatch' && inputs.accept_unverified_host_key }}
+        run: |
+          set -euo pipefail
+          : "${CPANEL_HOST:?Set the admin-production variable ADMIN_CPANEL_HOST}"
+          : "${CPANEL_PORT:?Set the admin-production variable ADMIN_CPANEL_PORT}"
+          : "${CPANEL_USER:?Set the admin-production variable ADMIN_CPANEL_USER}"
+          : "${CPANEL_SSH_KEY:?Set the admin-production secret ADMIN_CPANEL_SSH_KEY}"
+          [[ "${CPANEL_PORT}" =~ ^[0-9]{1,5}$ ]]
+          port_number=$((10#${CPANEL_PORT}))
+          (( port_number >= 1 && port_number <= 65535 ))
+          install -d -m 700 "$HOME/.ssh"
+          printf '%s\n' "$CPANEL_SSH_KEY" > "$HOME/.ssh/id_ed25519"
+          chmod 600 "$HOME/.ssh/id_ed25519"
+
+          if [[ "$ACCEPT_UNVERIFIED_HOST_KEY" == "true" ]]; then
+            # This opt-in is available only for a manually dispatched run. The
+            # first key is accepted and pinned only for the lifetime of this job.
+            known_hosts_file="$RUNNER_TEMP/notelibrary-admin-known-hosts"
+            : > "$known_hosts_file"
+            printf 'SSH_HOST_KEY_MODE=accept-new\n' >> "$GITHUB_ENV"
+          else
+            : "${CPANEL_KNOWN_HOSTS:?Set the provider-verified admin-production variable ADMIN_CPANEL_KNOWN_HOSTS}"
+            known_hosts_file="$HOME/.ssh/known_hosts"
+            printf '%s\n' "$CPANEL_KNOWN_HOSTS" > "$known_hosts_file"
+            known_hosts_identity="$CPANEL_HOST"
+            if [[ "$CPANEL_PORT" != 22 ]]; then
+              known_hosts_identity="[$CPANEL_HOST]:$CPANEL_PORT"
+            fi
+            ssh-keygen -F "$known_hosts_identity" -f "$known_hosts_file" >/dev/null
+            printf 'SSH_HOST_KEY_MODE=yes\n' >> "$GITHUB_ENV"
+          fi
+          chmod 600 "$known_hosts_file"
+          printf 'SSH_KNOWN_HOSTS_FILE=%s\n' "$known_hosts_file" >> "$GITHUB_ENV"
+
+      - name: Transfer release and deploy only the admin domain
+        shell: bash
+        env:
+          CPANEL_HOST: ${{ vars.ADMIN_CPANEL_HOST }}
+          CPANEL_PORT: ${{ vars.ADMIN_CPANEL_PORT }}
+          CPANEL_USER: ${{ vars.ADMIN_CPANEL_USER }}
+        run: |
+          set -euo pipefail
+          readonly target="${CPANEL_USER}@${CPANEL_HOST}"
+          readonly remote_stage="/home/notelibr/.cache/notelibrary-admin-deploy/${GITHUB_SHA}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          readonly ssh_key="$HOME/.ssh/id_ed25519"
+          readonly host_key_mode="${SSH_HOST_KEY_MODE}"
+          readonly known_hosts_file="${SSH_KNOWN_HOSTS_FILE}"
+
+          ssh -i "$ssh_key" -p "$CPANEL_PORT" \
+            -o BatchMode=yes -o StrictHostKeyChecking="$host_key_mode" -o UserKnownHostsFile="$known_hosts_file" \
+            "$target" "install -d -m 700 '$remote_stage'"
+          scp -i "$ssh_key" -P "$CPANEL_PORT" \
+            -o BatchMode=yes -o StrictHostKeyChecking="$host_key_mode" -o UserKnownHostsFile="$known_hosts_file" \
+            admin-release.tar.gz "$target:$remote_stage/release.tar.gz"
+          ssh -i "$ssh_key" -p "$CPANEL_PORT" \
+            -o BatchMode=yes -o StrictHostKeyChecking="$host_key_mode" -o UserKnownHostsFile="$known_hosts_file" \
+            "$target" "set -e; tar -xzf '$remote_stage/release.tar.gz' -C '$remote_stage'; /bin/bash '$remote_stage/deploy-cpanel.sh' '$remote_stage' '$GITHUB_SHA'; rm -rf -- '$remote_stage'"
