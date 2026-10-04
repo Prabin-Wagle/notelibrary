@@ -2,13 +2,13 @@
 
 This PHP API is deployed from the same `admin` branch and domain as the admin portal. Production URL: `https://admin.notelibraryapp.com/api/v1`; the portal calls it same-origin, so no cross-origin browser request is needed. Student and admin endpoints remain separate; this API serves the admin portal.
 
-## cPanel deployment
+## Manual cPanel deployment
 
-GitHub Actions builds and deploys the `admin` branch to `/home/notelibr/admin.notelibraryapp.com`; the PHP API lives under that same domain at `/api`. See the repository-root `DEPLOYMENT.md` for the one-time SSH and GitHub environment setup. cPanel's manual **Deploy HEAD Commit** option remains available through `.cpanel.yml` and invokes the same path-guarded deployment script.
+There is no GitHub Actions or cPanel Git auto-deploy in this setup. Build the portal locally with `npm ci` and `npm run build`, then upload the **contents** of `dist/` to the admin domain's document root (`/home/notelibr/admin.notelibraryapp.com`). Upload the contents of `backend/` into that document root's `/api` directory. The API is served on the same host at `https://admin.notelibraryapp.com/api/v1`.
 
-Before the first automatic deployment, authorize a dedicated SSH key in cPanel and add the required values to GitHub's `admin-production` environment. The server deployment script creates a verified private backup before replacing the document root, preserves `.well-known`, `cgi-bin`, API credentials, and API storage, and never writes to the student site or a separate API subdomain.
+Do not overwrite server-only files when uploading an update: preserve `/api/config.local.php` (or `/api/.env`), `/api/storage`, `.well-known`, and `cgi-bin`. Keep database credentials and `APP_KEY` only in the server-side configuration; never put them in the frontend build or commit them. If composer dependencies are not already included in the uploaded backend, run `composer install --no-dev --prefer-dist --no-interaction --optimize-autoloader` in `/api` using cPanel Terminal.
 
-On the server, copy `backend/config.example.php` to `/home/notelibr/admin.notelibraryapp.com/api/config.local.php` after the first deploy. Replace every placeholder with the real cPanel MySQL values. Generate `APP_KEY` with `php -r "echo bin2hex(random_bytes(32)), PHP_EOL;"`; never commit the resulting secret. Ensure the database and required schema migrations exist before expecting authentication or admin data to work.
+For a first setup, copy `backend/config.example.php` to `/api/config.local.php` on the server and replace placeholders with the cPanel MySQL values. Generate `APP_KEY` with `php -r "echo bin2hex(random_bytes(32)), PHP_EOL;"`; never commit the resulting secret. Ensure the database and required schema migrations exist before expecting authentication or admin data to work.
 
 The configuration file maps `DB_NAME` / `DB_USER` to the API's `DB_DATABASE` / `DB_USERNAME` environment names and only supplies values that are not already set in the environment. Restrict permissions on `config.local.php` (normally `0600`) and keep `/api` protected by its `.htaccess` rules.
 
