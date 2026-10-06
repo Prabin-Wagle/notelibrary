@@ -125,10 +125,14 @@ final class AdminApplicationFactory
 
             $group->get('/catalog/programs', [$catalog, 'programs']);
             $group->post('/catalog/programs', [$catalog, 'createProgram']);
+            $group->put('/catalog/programs/{id:[0-9]+}', [$catalog, 'updateProgram']);
+            $group->delete('/catalog/programs/{id:[0-9]+}', [$catalog, 'deleteProgram']);
             $group->get('/catalog/levels', [$catalog, 'levels']);
             $group->post('/catalog/levels', [$catalog, 'createLevel']);
             $group->get('/catalog/subjects', [$catalog, 'subjects']);
             $group->post('/catalog/subjects', [$catalog, 'createSubject']);
+            $group->put('/catalog/subjects/{id:[0-9]+}', [$catalog, 'updateSubject']);
+            $group->delete('/catalog/subjects/{id:[0-9]+}', [$catalog, 'deleteSubject']);
             $group->get('/catalog/offerings', [$catalog, 'offerings']);
             $group->post('/catalog/offerings', [$catalog, 'createOffering']);
             $group->get('/catalog/units', [$catalog, 'units']);

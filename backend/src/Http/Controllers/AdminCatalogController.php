@@ -26,6 +26,24 @@ final class AdminCatalogController
         return $this->created($request, $response, 'program', $this->catalog->createProgram($this->body($request)));
     }
 
+    /** @param array<string, string> $args */
+    public function updateProgram(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
+    {
+        $id = (int) $args['id'];
+        $this->catalog->updateProgram($id, $this->body($request));
+        $this->record($request, 'catalog.updated', 'program', $id);
+        return JsonResponder::success($response, ['updated' => true]);
+    }
+
+    /** @param array<string, string> $args */
+    public function deleteProgram(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
+    {
+        $id = (int) $args['id'];
+        $this->catalog->deleteProgram($id);
+        $this->record($request, 'catalog.deleted', 'program', $id);
+        return JsonResponder::success($response, ['deleted' => true]);
+    }
+
     public function levels(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
     {
         $query = $request->getQueryParams();
@@ -48,6 +66,24 @@ final class AdminCatalogController
     public function createSubject(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
     {
         return $this->created($request, $response, 'subject', $this->catalog->createSubject($this->body($request)));
+    }
+
+    /** @param array<string, string> $args */
+    public function updateSubject(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
+    {
+        $id = (int) $args['id'];
+        $this->catalog->updateSubject($id, $this->body($request));
+        $this->record($request, 'catalog.updated', 'subject', $id);
+        return JsonResponder::success($response, ['updated' => true]);
+    }
+
+    /** @param array<string, string> $args */
+    public function deleteSubject(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
+    {
+        $id = (int) $args['id'];
+        $this->catalog->deleteSubject($id);
+        $this->record($request, 'catalog.deleted', 'subject', $id);
+        return JsonResponder::success($response, ['deleted' => true]);
     }
 
     public function offerings(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
